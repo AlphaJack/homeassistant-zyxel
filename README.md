@@ -119,5 +119,11 @@ ZYXEL_HOST=192.168.1.1 ZYXEL_USER=homeassistant ZYXEL_PASS=… \
   .venv/bin/python -m pytest tests/test_live.py -q -s
 ```
 
+## Related
+
+Another Home Assistant integration by the same author:
+
+[<img src="https://raw.githubusercontent.com/AlphaJack/homeassistant-sanremo-coffee-machines/main/custom_components/sanremo/brand/logo.png" alt="Sanremo Coffee Machines" height="40"/>](https://github.com/AlphaJack/homeassistant-sanremo-coffee-machines)
+
 ## License
 MIT
