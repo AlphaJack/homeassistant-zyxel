@@ -53,8 +53,10 @@ and restart.
 | Username / Password | A router account. **A dedicated account is recommended.** |
 | Use HTTPS | Optional; the device uses a self-signed certificate. |
 | Verify SSL | Leave off for the self-signed certificate. |
+| Track network devices | Off by default. Enable to add a presence tracker per LAN/Wi-Fi client (for "who is home" automations); leave off to avoid cluttering HA. |
 
-Configure sets the poll interval (default 60 s, minimum 15 s).
+Configure sets the poll interval (default 60 s, minimum 15 s) and can toggle
+device tracking later.
 
 ### Recommended: a dedicated router account
 The router allows **only one active session per username**. If Home Assistant uses
@@ -82,10 +84,11 @@ transient error and retries, so a momentary overlap is not fatal.)
 | Wi-Fi radio on/off | `switch` | each Wi-Fi band |
 | Reboot | `button` | any |
 | WPS pairing | `button` | each Wi-Fi band |
-| Per-client presence | `device_tracker` | any (disabled by default) |
+| Per-client presence | `device_tracker` | opt-in ("Track network devices") |
 
-Device-tracker entities are created for every client the router has seen and are
-**disabled by default** — enable the ones you care about.
+Device tracking is **off by default** — it creates one device per LAN/Wi-Fi client,
+which is only useful for presence automations. Enable it via the "Track network
+devices" option (at setup or later) if you want it.
 
 ### Scope
 The integration covers **monitoring plus the common controls** (Wi-Fi on/off, WPS,

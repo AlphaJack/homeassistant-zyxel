@@ -9,7 +9,11 @@
           "username": "Username",
           "password": "Password",
           "use_https": "Use HTTPS",
-          "verify_ssl": "Verify SSL certificate"
+          "verify_ssl": "Verify SSL certificate",
+          "track_devices": "Track network devices"
+        },
+        "data_description": {
+          "track_devices": "Adds a presence device tracker for every LAN/Wi-Fi client (for 'who is home' automations). Leave off to avoid cluttering Home Assistant."
         }
       },
       "reauth_confirm": {
@@ -35,7 +39,8 @@
       "init": {
         "title": "Zyxel options",
         "data": {
-          "scan_interval": "Scan interval (seconds)"
+          "scan_interval": "Scan interval (seconds)",
+          "track_devices": "Track network devices"
         }
       }
     }

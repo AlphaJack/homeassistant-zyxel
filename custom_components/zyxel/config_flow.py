@@ -19,10 +19,12 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from .api import ZyxelAuthError, ZyxelConnectionError, ZyxelDalClient
 from .const import (
     CONF_SCAN_INTERVAL,
+    CONF_TRACK_DEVICES,
     CONF_USE_HTTPS,
     CONF_VERIFY_SSL,
     DEFAULT_HOST,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TRACK_DEVICES,
     DEFAULT_USE_HTTPS,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
@@ -90,6 +92,9 @@ class ZyxelConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_PASSWORD): str,
                     vol.Optional(CONF_USE_HTTPS, default=DEFAULT_USE_HTTPS): bool,
                     vol.Optional(CONF_VERIFY_SSL, default=DEFAULT_VERIFY_SSL): bool,
+                    vol.Optional(
+                        CONF_TRACK_DEVICES, default=DEFAULT_TRACK_DEVICES
+                    ): bool,
                 }
             ),
             errors=errors,
@@ -149,16 +154,22 @@ class ZyxelOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current = self.config_entry.options.get(
+        entry = self.config_entry
+        current_interval = entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+        )
+        current_track = entry.options.get(
+            CONF_TRACK_DEVICES,
+            entry.data.get(CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES),
         )
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_SCAN_INTERVAL, default=current): vol.All(
-                        vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
-                    )
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL, default=current_interval
+                    ): vol.All(vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)),
+                    vol.Optional(CONF_TRACK_DEVICES, default=current_track): bool,
                 }
             ),
         )

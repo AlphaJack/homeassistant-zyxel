@@ -1,7 +1,8 @@
 """Device tracker platform for the Zyxel integration.
 
-Tracks LAN/Wi-Fi clients reported by the router. These entities are disabled by
-default to avoid creating one per household device unless the user opts in.
+Tracks LAN/Wi-Fi clients reported by the router for presence detection. This is
+opt-in (the "Track network devices" option), because it creates one device per
+client and is only useful for "who is home" automations.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from homeassistant.components.device_tracker import ScannerEntity, SourceType
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES
 from .coordinator import ZyxelConfigEntry, ZyxelCoordinator
 
 PARALLEL_UPDATES = 0
@@ -22,7 +24,13 @@ async def async_setup_entry(
     entry: ZyxelConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up device trackers and add new ones as clients appear."""
+    """Set up device trackers (only if enabled) and add new clients as seen."""
+    if not entry.options.get(
+        CONF_TRACK_DEVICES,
+        entry.data.get(CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES),
+    ):
+        return
+
     coordinator = entry.runtime_data
     tracked: set[str] = set()
 
@@ -45,7 +53,6 @@ class ZyxelDeviceScanner(ScannerEntity):
     """Represents a single client tracked by the router."""
 
     _attr_should_poll = False
-    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: ZyxelCoordinator, mac: str) -> None:
         """Initialise the scanner entity."""
