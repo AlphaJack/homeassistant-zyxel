@@ -1,0 +1,81 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zyxel",
+        "description": "Enter the address and a router account (a dedicated account is recommended, since the router allows only one session per user).",
+        "data": {
+          "host": "Host",
+          "username": "Username",
+          "password": "Password",
+          "use_https": "Use HTTPS",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Zyxel",
+        "description": "The router rejected the stored credentials. Enter them again.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication"
+    },
+    "abort": {
+      "already_configured": "This router is already configured",
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zyxel options",
+        "data": {
+          "scan_interval": "Scan interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "dsl_downstream_rate": { "name": "DSL downstream rate" },
+      "dsl_upstream_rate": { "name": "DSL upstream rate" },
+      "dsl_status": { "name": "DSL status" },
+      "cpu_usage": { "name": "CPU usage" },
+      "memory_used": { "name": "Memory used" },
+      "firmware_version": { "name": "Firmware version" },
+      "lan_bytes_received": { "name": "LAN bytes received" },
+      "lan_bytes_sent": { "name": "LAN bytes sent" },
+      "uptime": { "name": "Uptime" },
+      "cell_rssi": { "name": "Cellular RSSI" },
+      "cell_rsrp": { "name": "Cellular RSRP" },
+      "cell_rsrq": { "name": "Cellular RSRQ" },
+      "cell_sinr": { "name": "Cellular SINR" },
+      "cell_band": { "name": "Cellular band" },
+      "cell_access_technology": { "name": "Cellular access technology" },
+      "cell_id": { "name": "Cellular cell ID" },
+      "cell_physical_id": { "name": "Cellular physical cell ID" },
+      "cell_nsa_rsrp": { "name": "Cellular 5G NSA RSRP" },
+      "cell_nsa_sinr": { "name": "Cellular 5G NSA SINR" },
+      "cell_temperature": { "name": "Cellular module temperature" },
+      "wan_ip": { "name": "WAN IP address" },
+      "connected_clients": { "name": "Connected clients" }
+    },
+    "binary_sensor": {
+      "dsl_link": { "name": "DSL link" },
+      "cell_link": { "name": "Cellular link" },
+      "voip_line": { "name": "VoIP line {line}" }
+    },
+    "button": {
+      "reboot": { "name": "Reboot" },
+      "wps": { "name": "WPS {band}" }
+    },
+    "switch": {
+      "wifi_radio": { "name": "Wi-Fi {band}" }
+    }
+  }
+}
