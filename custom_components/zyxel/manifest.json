@@ -1,6 +1,7 @@
 {
   "domain": "zyxel",
   "name": "Zyxel",
+  "categories": ["computers_network.routers_network"],
   "codeowners": ["@AlphaJack"],
   "config_flow": true,
   "documentation": "https://github.com/AlphaJack/homeassistant-zyxel",
