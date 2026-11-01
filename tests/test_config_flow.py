@@ -29,9 +29,7 @@ async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.FORM
 
     with (
-        patch(
-            "custom_components.zyxel.config_flow._validate", return_value=_DEVICE
-        ),
+        patch("custom_components.zyxel.config_flow._validate", return_value=_DEVICE),
         patch("custom_components.zyxel.async_setup_entry", return_value=True),
     ):
         result = await hass.config_entries.flow.async_configure(

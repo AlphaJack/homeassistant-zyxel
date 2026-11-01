@@ -119,8 +119,9 @@ ISP/TR-069-driven on carrier units, so there is no update entity.
 ```bash
 uv sync
 
-# lint
-uv run ruff check custom_components/zyxel
+# lint and formatting
+uv run ruff check custom_components tests
+uv run ruff format --check custom_components tests
 
 # offline tests (parsing, config flow, capability detection)
 uv run pytest tests -q --ignore=tests/test_live.py

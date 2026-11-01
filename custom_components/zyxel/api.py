@@ -122,8 +122,11 @@ class ZyxelDalClient:
     async def _get_json(self, url: str, **kwargs: Any) -> dict[str, Any]:
         try:
             async with self._session.get(
-                url, headers=_COMMON_HEADERS, ssl=self._ssl,
-                timeout=self._timeout, **kwargs
+                url,
+                headers=_COMMON_HEADERS,
+                ssl=self._ssl,
+                timeout=self._timeout,
+                **kwargs,
             ) as resp:
                 if resp.status == 401:
                     raise ZyxelAuthError("Unauthorized")
@@ -139,8 +142,10 @@ class ZyxelDalClient:
         try:
             # 1. establish session cookie
             async with self._session.get(
-                f"{self._base}/GetInfoNoLogin", headers=_COMMON_HEADERS,
-                ssl=self._ssl, timeout=self._timeout
+                f"{self._base}/GetInfoNoLogin",
+                headers=_COMMON_HEADERS,
+                ssl=self._ssl,
+                timeout=self._timeout,
             ):
                 pass
             # 2. RSA public key
@@ -207,8 +212,10 @@ class ZyxelDalClient:
         }
         try:
             async with self._session.post(
-                f"{self._base}/cgi-bin/UserLogout", headers=headers,
-                ssl=self._ssl, timeout=self._timeout
+                f"{self._base}/cgi-bin/UserLogout",
+                headers=headers,
+                ssl=self._ssl,
+                timeout=self._timeout,
             ):
                 pass
         except aiohttp.ClientError:  # pragma: no cover - best effort
@@ -319,8 +326,12 @@ class ZyxelDalClient:
         body = self._encrypt(obj) if self._encryption else json.dumps(obj)
         try:
             async with self._session.request(
-                method, url, data=body.encode(), headers=self._write_headers(),
-                ssl=self._ssl, timeout=self._timeout
+                method,
+                url,
+                data=body.encode(),
+                headers=self._write_headers(),
+                ssl=self._ssl,
+                timeout=self._timeout,
             ) as resp:
                 resp.raise_for_status()
                 data = await resp.json(content_type=None)
@@ -331,9 +342,7 @@ class ZyxelDalClient:
         if isinstance(data, dict) and data.get("sessionkey"):
             self.sessionkey = data["sessionkey"]  # consume rotated key
         if data.get("result") != "ZCFG_SUCCESS":
-            raise ZyxelConnectionError(
-                f"Write to {oid} rejected: {data.get('result')}"
-            )
+            raise ZyxelConnectionError(f"Write to {oid} rejected: {data.get('result')}")
         return data
 
     async def async_reboot(self) -> None:
@@ -433,9 +442,7 @@ def _parse_traffic(obj: dict[str, Any]) -> dict[str, dict[str, Any]]:
         ("pppIface", "pppIfaceSt"),
         ("ethIface", "ethIfaceSt"),
     ):
-        for iface, st in zip(
-            obj.get(iface_key, []), obj.get(st_key, []), strict=False
-        ):
+        for iface, st in zip(obj.get(iface_key, []), obj.get(st_key, []), strict=False):
             name = iface.get("X_ZYXEL_IfName")
             if name:
                 result[name] = st

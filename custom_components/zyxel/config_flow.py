@@ -79,9 +79,7 @@ class ZyxelConfigFlow(ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(serial)
                     self._abort_if_unique_id_configured()
                 model = device.get("ModelName", "Router")
-                return self.async_create_entry(
-                    title=f"Zyxel {model}", data=user_input
-                )
+                return self.async_create_entry(title=f"Zyxel {model}", data=user_input)
 
         return self.async_show_form(
             step_id="user",
@@ -155,9 +153,7 @@ class ZyxelOptionsFlow(OptionsFlow):
             return self.async_create_entry(data=user_input)
 
         entry = self.config_entry
-        current_interval = entry.options.get(
-            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-        )
+        current_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         current_track = entry.options.get(
             CONF_TRACK_DEVICES,
             entry.data.get(CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES),
@@ -166,9 +162,9 @@ class ZyxelOptionsFlow(OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(
-                        CONF_SCAN_INTERVAL, default=current_interval
-                    ): vol.All(vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)),
+                    vol.Optional(CONF_SCAN_INTERVAL, default=current_interval): vol.All(
+                        vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
+                    ),
                     vol.Optional(CONF_TRACK_DEVICES, default=current_track): bool,
                 }
             ),

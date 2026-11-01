@@ -64,12 +64,8 @@ async def _setup(hass: HomeAssistant, snapshot: dict[str, Any]) -> set[str]:
     )
     entry.add_to_hass(hass)
     with (
-        patch(
-            "custom_components.zyxel.api.ZyxelDalClient.login", new=AsyncMock()
-        ),
-        patch(
-            "custom_components.zyxel.api.ZyxelDalClient.logout", new=AsyncMock()
-        ),
+        patch("custom_components.zyxel.api.ZyxelDalClient.login", new=AsyncMock()),
+        patch("custom_components.zyxel.api.ZyxelDalClient.logout", new=AsyncMock()),
         patch(
             "custom_components.zyxel.api.ZyxelDalClient.async_get_status",
             new=AsyncMock(return_value=snapshot),

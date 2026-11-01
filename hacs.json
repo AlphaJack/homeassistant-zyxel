@@ -1,6 +1,6 @@
 {
   "name": "Zyxel",
-  "homeassistant": "2024.12.0",
+  "homeassistant": "2026.8.2",
   "render_readme": true,
   "zip_release": false
 }

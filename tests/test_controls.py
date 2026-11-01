@@ -87,8 +87,7 @@ async def test_controls_created(hass: HomeAssistant) -> None:
         entry = await _add_entry(hass)
         reg = er.async_get(hass)
         uids = {
-            e.unique_id
-            for e in er.async_entries_for_config_entry(reg, entry.entry_id)
+            e.unique_id for e in er.async_entries_for_config_entry(reg, entry.entry_id)
         }
     assert {"DX1_wifi_2.4GHz", "DX1_wifi_5GHz", "DX1_wps_2.4GHz", "DX1_reboot"} <= uids
 
