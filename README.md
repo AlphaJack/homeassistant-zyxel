@@ -117,15 +117,17 @@ ISP/TR-069-driven on carrier units, so there is no update entity.
 ## Development
 
 ```bash
-uv venv --python 3.13 .venv
-.venv/bin/pip install pytest-homeassistant-custom-component
+uv sync
+
+# lint
+uv run ruff check custom_components/zyxel
 
 # offline tests (parsing, config flow, capability detection)
-.venv/bin/python -m pytest tests -q --ignore=tests/test_live.py
+uv run pytest tests -q --ignore=tests/test_live.py
 
 # live end-to-end test against a real router
 ZYXEL_HOST=192.168.1.1 ZYXEL_USER=homeassistant ZYXEL_PASS=… \
-  .venv/bin/python -m pytest tests/test_live.py -q -s
+  uv run pytest tests/test_live.py -q -s
 ```
 
 ## License

@@ -7,19 +7,31 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   hassfest:
     name: Hassfest
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # tracks the latest Home Assistant validation rules on purpose
       - uses: home-assistant/actions/hassfest@master
 
   hacs:
     name: HACS
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # tracks the latest HACS validation rules on purpose
       - uses: hacs/action@main
         with:
           category: integration
@@ -27,11 +39,18 @@ jobs:
   tests:
     name: Tests (offline)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.13"
-      - run: pip install -r requirements-test.txt ruff
-      - run: ruff check custom_components/zyxel
-      - run: python -m pytest tests --ignore=tests/test_live.py -q
+          persist-credentials: false
+      - name: Install uv
+        # Python version from .python-version
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check custom_components/zyxel
+      - name: Run tests
+        run: uv run pytest tests --ignore=tests/test_live.py -q
