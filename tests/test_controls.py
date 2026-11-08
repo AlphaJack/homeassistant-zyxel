@@ -25,6 +25,10 @@ SNAPSHOT: dict[str, Any] = {
         "2.4GHz": {"radio": True, "ssid": "Home"},
         "5GHz": {"radio": True, "ssid": "Home-5"},
     },
+    "ssids": [
+        {"index": 2, "band": "2.4GHz", "ssid": "Guest", "enabled": True},
+        {"index": 3, "band": "2.4GHz", "ssid": "Unused", "enabled": False},
+    ],
     "traffic": {},
     "hosts": [],
 }
@@ -35,6 +39,7 @@ def _mock_client(stack: ExitStack) -> dict[str, AsyncMock]:
     mocks = {
         "async_set_wifi_radio": AsyncMock(),
         "async_wps_pbc": AsyncMock(),
+        "async_set_ssid": AsyncMock(),
         "async_reboot": AsyncMock(),
     }
     stack.enter_context(
@@ -114,3 +119,25 @@ async def test_wps_button_calls_api(hass: HomeAssistant) -> None:
             "button", "press", {"entity_id": entity_id}, blocking=True
         )
     mocks["async_wps_pbc"].assert_awaited_once_with("2.4GHz")
+
+
+async def test_ssid_switch_calls_api(hass: HomeAssistant) -> None:
+    """Turning a guest SSID off calls the SSID setter with its index."""
+    with ExitStack() as stack:
+        mocks = _mock_client(stack)
+        entry = await _add_entry(hass)
+        entity_id = _uid_to_entity(hass, entry, "DX1_ssid_2")
+        await hass.services.async_call(
+            "switch", "turn_off", {"entity_id": entity_id}, blocking=True
+        )
+    mocks["async_set_ssid"].assert_awaited_once_with(2, False)
+
+
+async def test_unused_ssid_switch_disabled_by_default(hass: HomeAssistant) -> None:
+    """An SSID slot that is off starts as a disabled entity."""
+    with ExitStack() as stack:
+        _mock_client(stack)
+        entry = await _add_entry(hass)
+        reg = er.async_get(hass)
+        entity = reg.async_get(_uid_to_entity(hass, entry, "DX1_ssid_3"))
+    assert entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION

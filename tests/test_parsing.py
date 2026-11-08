@@ -141,3 +141,44 @@ def test_parse_lan_ports() -> None:
         {"port": "LAN1", "up": True, "speed": 1000, "duplex": "Full"},
         {"port": "LAN2", "up": False, "speed": None, "duplex": None},
     ]
+
+
+def test_parse_ssids_skips_main_and_internal() -> None:
+    from custom_components.zyxel.api import _parse_ssids
+
+    wlans = [
+        {
+            "Index": 1,
+            "band": "2.4GHz",
+            "MainSSID": True,
+            "wlEnable": True,
+            "SSID": "Home",
+        },
+        {
+            "Index": 2,
+            "band": "2.4GHz",
+            "MainSSID": False,
+            "wlEnable": True,
+            "SSID": "Guest",
+            "X_ZYXEL_Attribute": 0,
+        },
+        {
+            "Index": 9,
+            "band": "5GHz",
+            "MainSSID": False,
+            "wlEnable": False,
+            "SSID": "onboard",
+            "X_ZYXEL_Attribute": 1,
+        },
+        {
+            "Index": 10,
+            "band": "5GHz",
+            "MainSSID": False,
+            "wlEnable": True,
+            "SSID": "backhaul",
+            "X_ZYXEL_Attribute": 2,
+        },
+    ]
+    assert _parse_ssids(wlans) == [
+        {"index": 2, "band": "2.4GHz", "ssid": "Guest", "enabled": True}
+    ]
