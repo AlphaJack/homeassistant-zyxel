@@ -66,7 +66,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZyxelConfigEntry) -> boo
             CONF_RELEASE_SESSION, DEFAULT_RELEASE_SESSION
         ),
     )
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        # Setup is retried with a new client. Release the session this one may
+        # hold, or every retry gets "Duplicated login" until the router expires it.
+        await client.logout()
+        raise
 
     entry.runtime_data = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
