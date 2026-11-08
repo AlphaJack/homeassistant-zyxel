@@ -57,6 +57,8 @@
       "cpu_usage": { "name": "CPU usage" },
       "memory_used": { "name": "Memory used" },
       "firmware_version": { "name": "Firmware version" },
+      "host_name": { "name": "Host name" },
+      "domain_name": { "name": "Domain name" },
       "lan_bytes_received": { "name": "LAN bytes received" },
       "lan_bytes_sent": { "name": "LAN bytes sent" },
       "wan_bytes_received": { "name": "WAN bytes received" },
