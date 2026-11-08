@@ -137,6 +137,20 @@ SENSORS: tuple[ZyxelSensorDescription, ...] = (
         value_fn=lambda d: d.get("device", {}).get("SoftwareVersion"),
     ),
     ZyxelSensorDescription(
+        key="host_name",
+        translation_key="host_name",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.get("system", {}).get("HostName"),
+    ),
+    ZyxelSensorDescription(
+        key="domain_name",
+        translation_key="domain_name",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.get("system", {}).get("DomainName"),
+    ),
+    ZyxelSensorDescription(
         key="wan_ip",
         translation_key="wan_ip",
         entity_category=EntityCategory.DIAGNOSTIC,
