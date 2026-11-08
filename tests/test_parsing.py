@@ -120,3 +120,24 @@ def test_parse_wan_traffic_none_up() -> None:
         )
         == {}
     )
+
+
+def test_parse_lan_ports() -> None:
+    from custom_components.zyxel.api import _parse_lan_ports
+
+    ports = _parse_lan_ports(
+        [
+            {
+                "X_ZYXEL_LanPort": "LAN1",
+                "Status": "Up",
+                "CurrentBitRate": 1000,
+                "DuplexMode": "Full",
+            },
+            {"X_ZYXEL_LanPort": "LAN2", "Status": "Down", "CurrentBitRate": 0},
+            {"Status": "Up"},  # dropped: no port name
+        ]
+    )
+    assert ports == [
+        {"port": "LAN1", "up": True, "speed": 1000, "duplex": "Full"},
+        {"port": "LAN2", "up": False, "speed": None, "duplex": None},
+    ]

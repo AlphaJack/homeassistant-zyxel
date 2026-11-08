@@ -81,7 +81,8 @@
     "binary_sensor": {
       "dsl_link": { "name": "DSL link" },
       "cell_link": { "name": "Cellular link" },
-      "voip_line": { "name": "VoIP line {line}" }
+      "voip_line": { "name": "VoIP line {line}" },
+      "lan_port": { "name": "{port} link" }
     },
     "button": {
       "reboot": { "name": "Reboot" },
