@@ -29,6 +29,9 @@ SNAPSHOT: dict[str, Any] = {
         {"index": 2, "band": "2.4GHz", "ssid": "Guest", "enabled": True},
         {"index": 3, "band": "2.4GHz", "ssid": "Unused", "enabled": False},
     ],
+    "port_forwards": [
+        {"index": 4, "name": "Web", "enabled": True, "protocol": "TCP"},
+    ],
     "traffic": {},
     "hosts": [],
 }
@@ -40,6 +43,7 @@ def _mock_client(stack: ExitStack) -> dict[str, AsyncMock]:
         "async_set_wifi_radio": AsyncMock(),
         "async_wps_pbc": AsyncMock(),
         "async_set_ssid": AsyncMock(),
+        "async_set_port_forward": AsyncMock(),
         "async_reboot": AsyncMock(),
     }
     stack.enter_context(
@@ -141,3 +145,15 @@ async def test_unused_ssid_switch_disabled_by_default(hass: HomeAssistant) -> No
         reg = er.async_get(hass)
         entity = reg.async_get(_uid_to_entity(hass, entry, "DX1_ssid_3"))
     assert entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+
+
+async def test_port_forward_switch_calls_api(hass: HomeAssistant) -> None:
+    """Turning a port-forward switch off calls the setter with the rule index."""
+    with ExitStack() as stack:
+        mocks = _mock_client(stack)
+        entry = await _add_entry(hass)
+        entity_id = _uid_to_entity(hass, entry, "DX1_port_forward_4")
+        await hass.services.async_call(
+            "switch", "turn_off", {"entity_id": entity_id}, blocking=True
+        )
+    mocks["async_set_port_forward"].assert_awaited_once_with(4, False)
