@@ -2,7 +2,7 @@
 
 # Zyxel for Home Assistant
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
+[![Marketplace Custom](https://img.shields.io/badge/Marketplace-Custom-41BDF5.svg)](https://www.home-assistant.io/integrations/marketplace/)
 
 Local, poll-based monitoring for **Zyxel gateways** that expose the *Web-Based
 Configurator* DAL API (`/cgi-bin/DAL`) — DSL/xDSL, fiber and cellular/5G. It talks
@@ -36,14 +36,25 @@ re-tested on cellular hardware — please report results.
 
 ## Installation
 
-Requires Home Assistant 2024.12 or newer.
+Requires Home Assistant 2026.8.2 or newer.
 
-In HACS, open the three-dot menu, choose *Custom repositories*, and add this
-repository as an *Integration*. Install it and restart. Then go to
-*Settings → Devices & services → Add integration → Zyxel*.
+[![Open in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AlphaJack&repository=homeassistant-zyxel&category=integration)
 
-To install by hand, copy `custom_components/zyxel` into `config/custom_components/`
-and restart.
+The button opens this repository in the Marketplace on Home Assistant 2026.11 or
+newer, and in HACS on older versions. Select *Install*, then restart if asked.
+
+Without the button:
+
+- **Home Assistant 2026.11 or newer:** go to *Settings → Marketplace*, select
+  *Add from link* and enter `AlphaJack/homeassistant-zyxel`. The first time, the Marketplace
+  asks you to connect your GitHub account.
+- **Older versions with HACS:** open the three-dot menu, choose *Custom
+  repositories*, and add this repository as an *Integration*.
+
+Then go to *Settings → Devices & services → Add integration → Zyxel*.
+
+To install by hand, copy `custom_components/zyxel` into
+`config/custom_components/` and restart.
 
 ## Configuration
 
