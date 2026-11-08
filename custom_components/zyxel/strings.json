@@ -89,7 +89,8 @@
       "wps": { "name": "WPS {band}" }
     },
     "switch": {
-      "wifi_radio": { "name": "Wi-Fi {band}" }
+      "wifi_radio": { "name": "Wi-Fi {band}" },
+      "wifi_ssid": { "name": "Wi-Fi {ssid} {band}" }
     }
   }
 }

@@ -320,6 +320,7 @@ class ZyxelDalClient:
             "wan": _select_wan(wan_list),
             "sip": _parse_sip(sip_list),
             "wifi": _parse_wifi(wlan_list),
+            "ssids": _parse_ssids(wlan_list),
             "traffic": _parse_traffic(traffic_raw),
             "wan_traffic": _parse_wan_traffic(traffic_raw),
             "hosts": _parse_hosts(lanhosts_raw),
@@ -412,6 +413,16 @@ class ZyxelDalClient:
         raise ZyxelConnectionError(f"No main SSID found for band {band}")
 
     @_serialized
+    async def async_set_ssid(self, index: int, enabled: bool) -> None:
+        """Enable/disable one SSID by its ``Index`` (read-modify-PUT)."""
+        for wlan in await self.get_objects("wlan"):
+            if wlan.get("Index") == index:
+                wlan["wlEnable"] = enabled
+                await self.async_dal_write("wlan", wlan, method="PUT")
+                return
+        raise ZyxelConnectionError(f"No SSID with index {index}")
+
+    @_serialized
     async def async_wps_pbc(self, band: str) -> None:
         """Start WPS push-button pairing on a band ('2.4GHz'/'5GHz')."""
         for wps in await self.get_objects("wps"):
@@ -471,6 +482,26 @@ def _parse_wifi(wlans: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
                 "ssid": wlan.get("SSID"),
             }
     return result
+
+
+def _parse_ssids(wlans: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return the extra (non-main) user SSIDs, e.g. guest networks.
+
+    ``X_ZYXEL_Attribute`` is non-zero for internal SSIDs (mesh onboarding and
+    backhaul), which must not be toggled.
+    """
+    return [
+        {
+            "index": wlan["Index"],
+            "band": wlan.get("band"),
+            "ssid": wlan.get("SSID"),
+            "enabled": bool(wlan.get("wlEnable")),
+        }
+        for wlan in wlans
+        if "Index" in wlan
+        and not wlan.get("MainSSID")
+        and not wlan.get("X_ZYXEL_Attribute")
+    ]
 
 
 def _parse_traffic(obj: dict[str, Any]) -> dict[str, dict[str, Any]]:
