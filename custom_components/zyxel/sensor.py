@@ -205,7 +205,7 @@ SENSORS: tuple[ZyxelSensorDescription, ...] = (
         value_fn=lambda d: d.get("wan_traffic", {}).get("BytesSent"),
         section="wan_traffic",
     ),
-    # --- Cellular / 5G (folded in from the nr7101 / ha-zyxel field mapping) ---
+    # --- Cellular / 5G ---
     ZyxelSensorDescription(
         key="cell_rssi",
         translation_key="cell_rssi",
