@@ -56,6 +56,8 @@ def _section_present(data: dict[str, Any], section: str) -> bool:
         return bool(data.get("cellular"))
     if section == "traffic":
         return _TRAFFIC_IFACE in data.get("traffic", {})
+    if section == "wan_traffic":
+        return bool(data.get("wan_traffic"))
     if section == "wan":
         return bool(data.get("wan", {}).get("ip"))
     return True  # "common"
@@ -168,6 +170,26 @@ SENSORS: tuple[ZyxelSensorDescription, ...] = (
         suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
         value_fn=_traffic("BytesSent"),
         section="traffic",
+    ),
+    ZyxelSensorDescription(
+        key="wan_bytes_received",
+        translation_key="wan_bytes_received",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        value_fn=lambda d: d.get("wan_traffic", {}).get("BytesReceived"),
+        section="wan_traffic",
+    ),
+    ZyxelSensorDescription(
+        key="wan_bytes_sent",
+        translation_key="wan_bytes_sent",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        value_fn=lambda d: d.get("wan_traffic", {}).get("BytesSent"),
+        section="wan_traffic",
     ),
     # --- Cellular / 5G (folded in from the nr7101 / ha-zyxel field mapping) ---
     ZyxelSensorDescription(
