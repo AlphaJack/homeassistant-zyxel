@@ -64,12 +64,14 @@ account to a few pages (status, traffic, reboot), so WAN IP, Wi-Fi control, WPS,
 VoIP, connected-clients and device tracking — all Administrator-only pages — would
 not work.
 
-The router also allows **only one active session per username**. If Home Assistant
-uses the account you also log into the web UI with, they evict each other
-("Duplicated login"). Create a separate Administrator account (e.g. `homeassistant`)
-under *Maintenance → User Account* and use it here. (The integration treats a
-"Duplicated login" as a transient error and retries, so a momentary overlap is not
-fatal.)
+The router also allows **only one active session per username**. A second login
+does not evict the first: the router refuses it with HTTP 401 and
+`{"result":"Duplicated login"}` until the first session logs out or idles out
+(5 minutes by default). If Home Assistant uses the account you also log into the
+web UI with, whichever logs in second is locked out. Create a separate
+Administrator account (e.g. `homeassistant`) under *Maintenance → User Account*
+and use it here. (The integration treats a "Duplicated login" as a transient error
+and retries, so a momentary overlap is not fatal.)
 
 ## Entities
 
