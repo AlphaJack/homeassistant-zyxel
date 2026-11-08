@@ -44,6 +44,7 @@ def _mock_client(stack: ExitStack) -> dict[str, AsyncMock]:
         "async_wps_pbc": AsyncMock(),
         "async_set_ssid": AsyncMock(),
         "async_set_port_forward": AsyncMock(),
+        "async_set_led": AsyncMock(),
         "async_reboot": AsyncMock(),
     }
     stack.enter_context(
@@ -157,3 +158,31 @@ async def test_port_forward_switch_calls_api(hass: HomeAssistant) -> None:
             "switch", "turn_off", {"entity_id": entity_id}, blocking=True
         )
     mocks["async_set_port_forward"].assert_awaited_once_with(4, False)
+
+
+async def test_led_switch_only_when_supported(hass: HomeAssistant) -> None:
+    """Without LED state in the snapshot there is no LED switch."""
+    with ExitStack() as stack:
+        _mock_client(stack)
+        entry = await _add_entry(hass)
+        reg = er.async_get(hass)
+        uids = {
+            e.unique_id for e in er.async_entries_for_config_entry(reg, entry.entry_id)
+        }
+    assert "DX1_led" not in uids
+
+
+async def test_led_switch_calls_api(hass: HomeAssistant) -> None:
+    """With LED state reported, the switch turns the LEDs off."""
+    SNAPSHOT["led"] = True
+    try:
+        with ExitStack() as stack:
+            mocks = _mock_client(stack)
+            entry = await _add_entry(hass)
+            entity_id = _uid_to_entity(hass, entry, "DX1_led")
+            await hass.services.async_call(
+                "switch", "turn_off", {"entity_id": entity_id}, blocking=True
+            )
+    finally:
+        SNAPSHOT.pop("led")
+    mocks["async_set_led"].assert_awaited_once_with(False)

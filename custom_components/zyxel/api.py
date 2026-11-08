@@ -308,6 +308,7 @@ class ZyxelDalClient:
         sip_list = await self._get_optional_list("sip_account")
         wlan_list = await self._get_optional_list("wlan")
         nat_list = await self._get_optional_list("nat")
+        led = await self._get_led()
 
         dsl_all = status.get("DslChannelInfo") or []
         dsl = _select_active_dsl(dsl_all)
@@ -323,6 +324,7 @@ class ZyxelDalClient:
             "wifi": _parse_wifi(wlan_list),
             "ssids": _parse_ssids(wlan_list),
             "port_forwards": _parse_port_forwards(nat_list),
+            "led": led,
             "traffic": _parse_traffic(traffic_raw),
             "wan_traffic": _parse_wan_traffic(traffic_raw),
             "hosts": _parse_hosts(lanhosts_raw),
@@ -343,19 +345,25 @@ class ZyxelDalClient:
     async def async_dal_write(
         self, oid: str, obj: dict[str, Any], method: str = "PUT"
     ) -> dict[str, Any]:
-        """Write a DAL object (PUT=set/add, POST=modify, DELETE=remove).
+        """Write a DAL object (PUT=set/add, POST=modify, DELETE=remove)."""
+        data = await self._write(f"/cgi-bin/DAL?oid={oid}", obj, method)
+        if data.get("result") != "ZCFG_SUCCESS":
+            raise ZyxelConnectionError(f"Write to {oid} rejected: {data.get('result')}")
+        return data
+
+    async def _write(self, path: str, obj: dict[str, Any], method: str) -> Any:
+        """Send an encrypted write and return the decrypted reply.
 
         The session key rotates on every write; the new one is returned in the
         response body and is stored for the next write.
         """
         if not self.sessionkey:
             await self.login()
-        url = f"{self._base}/cgi-bin/DAL?oid={oid}"
         body = self._encrypt(obj) if self._encryption else json.dumps(obj)
         try:
             async with self._session.request(
                 method,
-                url,
+                f"{self._base}{path}",
                 data=body.encode(),
                 headers=self._write_headers(),
                 ssl=self._ssl,
@@ -366,7 +374,7 @@ class ZyxelDalClient:
                     # session so later calls stop using it and re-login once
                     # the router has expired it.
                     self.sessionkey = None
-                    raise ZyxelConnectionError(f"Write to {oid} rejected: HTTP 403")
+                    raise ZyxelConnectionError(f"Write to {path} rejected: HTTP 403")
                 resp.raise_for_status()
                 data = await resp.json(content_type=None)
             if self._encryption:
@@ -377,12 +385,34 @@ class ZyxelDalClient:
             # The router may have rotated the key without us reading the new
             # one (e.g. a Wi-Fi reload cut the reply), so the key is unknown.
             self.sessionkey = None
-            raise ZyxelConnectionError(f"Unreadable reply to write {oid}") from err
+            raise ZyxelConnectionError(f"Unreadable reply to write {path}") from err
         if isinstance(data, dict) and data.get("sessionkey"):
             self.sessionkey = data["sessionkey"]  # consume rotated key
-        if data.get("result") != "ZCFG_SUCCESS":
-            raise ZyxelConnectionError(f"Write to {oid} rejected: {data.get('result')}")
         return data
+
+    async def _get_led(self) -> bool | None:
+        """Return the LED state, or None where /cgi-bin/LEDStatus is unsupported.
+
+        Some firmware (e.g. EX3301-T0) exposes ``{"isactive": bool}``; others
+        answer ``[{"Ret": "ZCFG_INVALID_OBJECT"}]``.
+        """
+        try:
+            data = await self._get_json(
+                f"{self._base}/cgi-bin/LEDStatus",
+                headers={"CSRFToken": str(self.sessionkey)},
+            )
+            if self._encryption and isinstance(data, dict) and "iv" in data:
+                data = self._decrypt(data)
+        except ZyxelError, ValueError, KeyError:
+            return None
+        if isinstance(data, dict) and "isactive" in data:
+            return bool(data["isactive"])
+        return None
+
+    @_serialized
+    async def async_set_led(self, enabled: bool) -> None:
+        """Turn the front-panel LEDs on or off (where LEDStatus is supported)."""
+        await self._write("/cgi-bin/LEDStatus", {"status": enabled}, "PUT")
 
     @_serialized
     async def async_reboot(self) -> None:

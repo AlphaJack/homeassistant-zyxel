@@ -86,6 +86,7 @@ async def test_operations_are_serialized() -> None:
     client.get_object = first_object  # type: ignore[method-assign]
     client._get_optional = AsyncMock(return_value=None)  # type: ignore[method-assign]
     client._get_optional_list = AsyncMock(return_value=[])  # type: ignore[method-assign]
+    client._get_led = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
     poll = asyncio.create_task(client.async_get_status())
     await asyncio.wait_for(poll_started.wait(), 5)
