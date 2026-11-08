@@ -33,6 +33,8 @@ async def async_setup_entry(
         ZyxelPortForwardSwitch(coordinator, rule)
         for rule in coordinator.data.get("port_forwards", [])
     )
+    if coordinator.data.get("led") is not None:
+        entities.append(ZyxelLedSwitch(coordinator))
     async_add_entities(entities)
 
 
@@ -177,4 +179,37 @@ class ZyxelPortForwardSwitch(ZyxelEntity, SwitchEntity):
 
     async def _set(self, enabled: bool) -> None:
         await self.coordinator.client.async_set_port_forward(self._index, enabled)
+        await self.coordinator.async_request_refresh()
+
+
+class ZyxelLedSwitch(ZyxelEntity, SwitchEntity):
+    """Turn the router's front-panel LEDs on or off."""
+
+    _attr_translation_key = "led"
+    _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: ZyxelCoordinator) -> None:
+        """Initialise the LED switch."""
+        super().__init__(coordinator)
+        serial = self._data.get("device", {}).get(
+            "SerialNumber", coordinator.config_entry.entry_id
+        )
+        self._attr_unique_id = f"{serial}_led"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the LEDs are on."""
+        return bool(self.coordinator.data.get("led"))
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the LEDs on."""
+        await self._set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the LEDs off."""
+        await self._set(False)
+
+    async def _set(self, enabled: bool) -> None:
+        await self.coordinator.client.async_set_led(enabled)
         await self.coordinator.async_request_refresh()
