@@ -15,11 +15,14 @@ Firmware quirks handled here (nr7101 gets these wrong on this firmware):
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import functools
 import json
 import logging
 import os
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import Any, Concatenate
 
 import aiohttp
 from cryptography.hazmat.primitives.asymmetric import padding as asym_padding
@@ -47,6 +50,23 @@ class ZyxelConnectionError(ZyxelError):
 
 class ZyxelAuthError(ZyxelError):
     """Raised when the router rejects the supplied credentials."""
+
+
+def _serialized[**P, R](
+    func: Callable[Concatenate[ZyxelDalClient, P], Awaitable[R]],
+) -> Callable[Concatenate[ZyxelDalClient, P], Awaitable[R]]:
+    """Run one public operation at a time.
+
+    The router rotates the session key on every write, so a write racing a
+    poll would leave the in-flight reads on a stale key.
+    """
+
+    @functools.wraps(func)
+    async def wrapper(self: ZyxelDalClient, *args: P.args, **kwargs: P.kwargs) -> R:
+        async with self._lock:
+            return await func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class ZyxelDalClient:
@@ -77,6 +97,7 @@ class ZyxelDalClient:
         self._encryption = False
         self.sessionkey: str | None = None
         self._timeout = aiohttp.ClientTimeout(total=20)
+        self._lock = asyncio.Lock()
 
     @property
     def base_url(self) -> str:
@@ -200,6 +221,7 @@ class ZyxelDalClient:
         if not self.sessionkey:
             raise ZyxelAuthError("No session key returned")
 
+    @_serialized
     async def logout(self) -> None:
         """POST logout (GET is ignored by this firmware)."""
         if not self.sessionkey:
@@ -270,6 +292,7 @@ class ZyxelDalClient:
         except ZyxelConnectionError:
             return []
 
+    @_serialized
     async def async_get_status(self) -> dict[str, Any]:
         """Fetch and normalise everything the entities need.
 
@@ -356,6 +379,7 @@ class ZyxelDalClient:
             raise ZyxelConnectionError(f"Write to {oid} rejected: {data.get('result')}")
         return data
 
+    @_serialized
     async def async_reboot(self) -> None:
         """Reboot the router (POST with CSRFToken header)."""
         if not self.sessionkey:
@@ -371,6 +395,7 @@ class ZyxelDalClient:
         except aiohttp.ClientError as err:
             raise ZyxelConnectionError(str(err)) from err
 
+    @_serialized
     async def async_set_wifi_radio(self, band: str, enabled: bool) -> None:
         """Enable/disable a Wi-Fi radio by band ('2.4GHz'/'5GHz').
 
@@ -384,6 +409,7 @@ class ZyxelDalClient:
                 return
         raise ZyxelConnectionError(f"No main SSID found for band {band}")
 
+    @_serialized
     async def async_wps_pbc(self, band: str) -> None:
         """Start WPS push-button pairing on a band ('2.4GHz'/'5GHz')."""
         for wps in await self.get_objects("wps"):
