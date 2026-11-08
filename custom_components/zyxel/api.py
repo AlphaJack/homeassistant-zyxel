@@ -140,14 +140,15 @@ class ZyxelDalClient:
 
     # -- HTTP helpers ---------------------------------------------------------
 
-    async def _get_json(self, url: str, **kwargs: Any) -> dict[str, Any]:
+    async def _get_json(
+        self, url: str, *, headers: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         try:
             async with self._session.get(
                 url,
-                headers=_COMMON_HEADERS,
+                headers={**_COMMON_HEADERS, **(headers or {})},
                 ssl=self._ssl,
                 timeout=self._timeout,
-                **kwargs,
             ) as resp:
                 if resp.status == 401:
                     raise ZyxelAuthError("Unauthorized")
