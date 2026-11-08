@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zyxel.api import ZyxelConnectionError
-from custom_components.zyxel.const import DOMAIN
+from custom_components.zyxel.const import CONF_RELEASE_SESSION, DOMAIN
 
 DATA = {
     CONF_HOST: "192.168.1.1",
@@ -67,3 +67,31 @@ async def test_setup_retry_on_connection_error(hass: HomeAssistant) -> None:
         assert not await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def _refresh_logout_count(hass: HomeAssistant, options: dict[str, Any]) -> int:
+    entry = MockConfigEntry(domain=DOMAIN, data=DATA, options=options)
+    entry.add_to_hass(hass)
+    logout = AsyncMock()
+    with (
+        patch("custom_components.zyxel.api.ZyxelDalClient.login", new=AsyncMock()),
+        patch("custom_components.zyxel.api.ZyxelDalClient.logout", new=logout),
+        patch(
+            "custom_components.zyxel.api.ZyxelDalClient.async_get_status",
+            new=AsyncMock(return_value=SNAP),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        await entry.runtime_data.async_refresh()
+        return logout.await_count
+
+
+async def test_release_session_logs_out_after_each_refresh(hass: HomeAssistant) -> None:
+    """With the option on, every refresh ends with a logout."""
+    assert await _refresh_logout_count(hass, {CONF_RELEASE_SESSION: True}) == 2
+
+
+async def test_session_kept_by_default(hass: HomeAssistant) -> None:
+    """By default the session stays open between refreshes."""
+    assert await _refresh_logout_count(hass, {}) == 0
