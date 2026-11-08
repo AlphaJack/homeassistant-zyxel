@@ -73,6 +73,11 @@ Administrator account (e.g. `homeassistant`) under *Maintenance → User Account
 and use it here. (The integration treats a "Duplicated login" as a transient error
 and retries, so a momentary overlap is not fatal.)
 
+To share one account with the web UI instead, turn on *Release the router session
+between refreshes* in the integration options. Home Assistant then logs out after
+every refresh, so the account is free in between. Refreshes fail while you are
+logged in to the web UI.
+
 ## Entities
 
 | Entity | Domain | Needs |

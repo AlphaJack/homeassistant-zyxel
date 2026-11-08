@@ -31,6 +31,8 @@ class ZyxelCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         entry: ZyxelConfigEntry,
         client: ZyxelDalClient,
         update_interval: timedelta,
+        *,
+        release_session: bool = False,
     ) -> None:
         """Initialise the coordinator."""
         super().__init__(
@@ -41,6 +43,7 @@ class ZyxelCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=update_interval,
         )
         self.client = client
+        self.release_session = release_session
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch the latest status from the router."""
@@ -51,3 +54,8 @@ class ZyxelCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except ZyxelConnectionError as err:
             raise UpdateFailed(str(err)) from err
+        finally:
+            if self.release_session:
+                # Free the single per-user session so the account can log in
+                # to the web UI until the next refresh.
+                await self.client.logout()

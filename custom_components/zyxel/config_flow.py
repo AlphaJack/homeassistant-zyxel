@@ -18,11 +18,13 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import ZyxelAuthError, ZyxelConnectionError, ZyxelDalClient
 from .const import (
+    CONF_RELEASE_SESSION,
     CONF_SCAN_INTERVAL,
     CONF_TRACK_DEVICES,
     CONF_USE_HTTPS,
     CONF_VERIFY_SSL,
     DEFAULT_HOST,
+    DEFAULT_RELEASE_SESSION,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TRACK_DEVICES,
     DEFAULT_USE_HTTPS,
@@ -158,6 +160,9 @@ class ZyxelOptionsFlow(OptionsFlow):
             CONF_TRACK_DEVICES,
             entry.data.get(CONF_TRACK_DEVICES, DEFAULT_TRACK_DEVICES),
         )
+        current_release = entry.options.get(
+            CONF_RELEASE_SESSION, DEFAULT_RELEASE_SESSION
+        )
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -166,6 +171,7 @@ class ZyxelOptionsFlow(OptionsFlow):
                         vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
                     ),
                     vol.Optional(CONF_TRACK_DEVICES, default=current_track): bool,
+                    vol.Optional(CONF_RELEASE_SESSION, default=current_release): bool,
                 }
             ),
         )

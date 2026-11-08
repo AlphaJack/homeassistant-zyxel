@@ -16,9 +16,11 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import ZyxelDalClient
 from .const import (
+    CONF_RELEASE_SESSION,
     CONF_SCAN_INTERVAL,
     CONF_USE_HTTPS,
     CONF_VERIFY_SSL,
+    DEFAULT_RELEASE_SESSION,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USE_HTTPS,
     DEFAULT_VERIFY_SSL,
@@ -55,7 +57,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZyxelConfigEntry) -> boo
     scan_interval = timedelta(
         seconds=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     )
-    coordinator = ZyxelCoordinator(hass, entry, client, scan_interval)
+    coordinator = ZyxelCoordinator(
+        hass,
+        entry,
+        client,
+        scan_interval,
+        release_session=entry.options.get(
+            CONF_RELEASE_SESSION, DEFAULT_RELEASE_SESSION
+        ),
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

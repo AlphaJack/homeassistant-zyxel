@@ -40,7 +40,11 @@
         "title": "Zyxel options",
         "data": {
           "scan_interval": "Scan interval (seconds)",
-          "track_devices": "Track network devices"
+          "track_devices": "Track network devices",
+          "release_session": "Release the router session between refreshes"
+        },
+        "data_description": {
+          "release_session": "Log out after every refresh so the same account can use the router's web UI in between. Refreshes fail while you are logged in there."
         }
       }
     }
