@@ -45,12 +45,16 @@ def test_parse_hosts() -> None:
                 "IPAddress": "192.168.1.20",
                 "Active": True,
                 "X_ZYXEL_ConnectionType": "WiFi",
+                "X_ZYXEL_RSSI": -60,
+                "X_ZYXEL_OperatingStandard": "",
             },
             {"HostName": "no-mac"},  # dropped: no PhysAddress
         ]
     }
     hosts = _parse_hosts(obj)
     assert len(hosts) == 1
+    assert hosts[0]["rssi"] == -60
+    assert hosts[0]["wifi_standard"] is None
     assert hosts[0]["mac"] == "AA:BB:CC:DD:EE:FF"
     assert hosts[0]["name"] == "laptop"
     assert hosts[0]["active"] is True

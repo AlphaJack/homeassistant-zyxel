@@ -538,6 +538,15 @@ def _parse_hosts(obj: dict[str, Any]) -> list[dict[str, Any]]:
                 "access_point": h.get("X_ZYXEL_ConnectedAP"),
                 "host_type": h.get("X_ZYXEL_HostType"),
                 "interface": h.get("Layer1Interface"),
+                "wifi_standard": h.get("X_ZYXEL_OperatingStandard") or None,
+                "rssi": h.get("X_ZYXEL_RSSI"),
+                "snr": h.get("X_ZYXEL_SNR"),
+                "signal_strength": h.get("X_ZYXEL_SignalStrength"),
+                "phy_rate": h.get("X_ZYXEL_PhyRate"),
+                "downlink_rate": h.get("X_ZYXEL_LastDataDownlinkRate"),
+                "uplink_rate": h.get("X_ZYXEL_LastDataUplinkRate"),
+                "bytes_sent": h.get("X_ZYXEL_BytesSent"),
+                "bytes_received": h.get("X_ZYXEL_BytesReceived"),
             }
         )
     return hosts
