@@ -59,6 +59,8 @@
       "firmware_version": { "name": "Firmware version" },
       "lan_bytes_received": { "name": "LAN bytes received" },
       "lan_bytes_sent": { "name": "LAN bytes sent" },
+      "wan_bytes_received": { "name": "WAN bytes received" },
+      "wan_bytes_sent": { "name": "WAN bytes sent" },
       "uptime": { "name": "Uptime" },
       "cell_rssi": { "name": "Cellular RSSI" },
       "cell_rsrp": { "name": "Cellular RSRP" },

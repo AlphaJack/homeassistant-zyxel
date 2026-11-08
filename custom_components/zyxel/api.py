@@ -321,6 +321,7 @@ class ZyxelDalClient:
             "sip": _parse_sip(sip_list),
             "wifi": _parse_wifi(wlan_list),
             "traffic": _parse_traffic(traffic_raw),
+            "wan_traffic": _parse_wan_traffic(traffic_raw),
             "hosts": _parse_hosts(lanhosts_raw),
         }
 
@@ -484,6 +485,33 @@ def _parse_traffic(obj: dict[str, Any]) -> dict[str, dict[str, Any]]:
             if name:
                 result[name] = st
     return result
+
+
+def _parse_wan_traffic(obj: dict[str, Any]) -> dict[str, Any]:
+    """Return byte counters of the active WAN (default gateway, Up).
+
+    A PPPoE WAN keeps its counters on the PPP interface its ``LowerLayers``
+    points to (``PPP.Interface.N``, 1-based); an IPoE WAN keeps them on the IP
+    interface itself.
+    """
+    ppp_stats = obj.get("pppIfaceSt", [])
+    for iface, st in zip(
+        obj.get("ipIface", []), obj.get("ipIfaceSt", []), strict=False
+    ):
+        if not iface.get("X_ZYXEL_DefaultGatewayIface") or iface.get("Status") != "Up":
+            continue
+        lower = str(iface.get("LowerLayers") or "")
+        if lower.startswith("PPP.Interface."):
+            try:
+                st = ppp_stats[int(lower.rsplit(".", 1)[1]) - 1]
+            except ValueError, IndexError:
+                continue
+        return {
+            "name": iface.get("X_ZYXEL_SrvName"),
+            "BytesReceived": st.get("BytesReceived"),
+            "BytesSent": st.get("BytesSent"),
+        }
+    return {}
 
 
 def _parse_hosts(obj: dict[str, Any]) -> list[dict[str, Any]]:
