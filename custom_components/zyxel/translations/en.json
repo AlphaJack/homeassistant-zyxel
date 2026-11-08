@@ -90,7 +90,8 @@
     },
     "switch": {
       "wifi_radio": { "name": "Wi-Fi {band}" },
-      "wifi_ssid": { "name": "Wi-Fi {ssid} {band}" }
+      "wifi_ssid": { "name": "Wi-Fi {ssid} {band}" },
+      "port_forward": { "name": "Port forward {name}" }
     }
   }
 }

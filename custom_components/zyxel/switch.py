@@ -1,4 +1,4 @@
-"""Switch platform for the Zyxel integration (Wi-Fi radio and SSID control)."""
+"""Switch platform for the Zyxel integration (Wi-Fi and port-forward control)."""
 
 from __future__ import annotations
 
@@ -28,6 +28,10 @@ async def async_setup_entry(
     ]
     entities.extend(
         ZyxelSsidSwitch(coordinator, ssid) for ssid in coordinator.data.get("ssids", [])
+    )
+    entities.extend(
+        ZyxelPortForwardSwitch(coordinator, rule)
+        for rule in coordinator.data.get("port_forwards", [])
     )
     async_add_entities(entities)
 
@@ -118,4 +122,59 @@ class ZyxelSsidSwitch(ZyxelEntity, SwitchEntity):
 
     async def _set(self, enabled: bool) -> None:
         await self.coordinator.client.async_set_ssid(self._index, enabled)
+        await self.coordinator.async_request_refresh()
+
+
+class ZyxelPortForwardSwitch(ZyxelEntity, SwitchEntity):
+    """Enable/disable one NAT port-forward rule."""
+
+    _attr_translation_key = "port_forward"
+    _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: ZyxelCoordinator, rule: dict[str, Any]) -> None:
+        """Initialise the port-forward switch."""
+        super().__init__(coordinator)
+        self._index = rule["index"]
+        self._attr_translation_placeholders = {"name": str(rule.get("name"))}
+        serial = self._data.get("device", {}).get(
+            "SerialNumber", coordinator.config_entry.entry_id
+        )
+        self._attr_unique_id = f"{serial}_port_forward_{self._index}"
+
+    def _rule(self) -> dict[str, Any] | None:
+        for rule in self.coordinator.data.get("port_forwards", []):
+            if rule.get("index") == self._index:
+                return rule
+        return None
+
+    @property
+    def available(self) -> bool:
+        """Unavailable once the rule is deleted on the router."""
+        return super().available and self._rule() is not None
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the rule is active."""
+        return bool((self._rule() or {}).get("enabled"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose what the rule forwards."""
+        rule = self._rule() or {}
+        return {
+            key: rule.get(key)
+            for key in ("protocol", "external_port", "internal_port", "internal_client")
+        }
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable the rule."""
+        await self._set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable the rule."""
+        await self._set(False)
+
+    async def _set(self, enabled: bool) -> None:
+        await self.coordinator.client.async_set_port_forward(self._index, enabled)
         await self.coordinator.async_request_refresh()

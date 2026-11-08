@@ -307,6 +307,7 @@ class ZyxelDalClient:
         wan_list = await self._get_optional_list("wan")
         sip_list = await self._get_optional_list("sip_account")
         wlan_list = await self._get_optional_list("wlan")
+        nat_list = await self._get_optional_list("nat")
 
         dsl_all = status.get("DslChannelInfo") or []
         dsl = _select_active_dsl(dsl_all)
@@ -321,6 +322,7 @@ class ZyxelDalClient:
             "sip": _parse_sip(sip_list),
             "wifi": _parse_wifi(wlan_list),
             "ssids": _parse_ssids(wlan_list),
+            "port_forwards": _parse_port_forwards(nat_list),
             "traffic": _parse_traffic(traffic_raw),
             "wan_traffic": _parse_wan_traffic(traffic_raw),
             "hosts": _parse_hosts(lanhosts_raw),
@@ -423,6 +425,16 @@ class ZyxelDalClient:
         raise ZyxelConnectionError(f"No SSID with index {index}")
 
     @_serialized
+    async def async_set_port_forward(self, index: int, enabled: bool) -> None:
+        """Enable/disable one port-forward rule, keeping its other fields."""
+        for rule in await self.get_objects("nat"):
+            if rule.get("Index") == index:
+                rule["Enable"] = enabled
+                await self.async_dal_write("nat", rule, method="PUT")
+                return
+        raise ZyxelConnectionError(f"No port-forward rule with index {index}")
+
+    @_serialized
     async def async_wps_pbc(self, band: str) -> None:
         """Start WPS push-button pairing on a band ('2.4GHz'/'5GHz')."""
         for wps in await self.get_objects("wps"):
@@ -501,6 +513,28 @@ def _parse_ssids(wlans: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if "Index" in wlan
         and not wlan.get("MainSSID")
         and not wlan.get("X_ZYXEL_Attribute")
+    ]
+
+
+def _parse_port_forwards(rules: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalise NAT port-forward rules into a compact per-rule list."""
+
+    def _ports(rule: dict[str, Any], side: str) -> str:
+        start, end = rule.get(f"{side}PortStart"), rule.get(f"{side}PortEnd")
+        return str(start) if end in (None, start) else f"{start}-{end}"
+
+    return [
+        {
+            "index": rule["Index"],
+            "name": rule.get("Description") or f"Rule {rule['Index']}",
+            "enabled": bool(rule.get("Enable")),
+            "protocol": rule.get("Protocol"),
+            "external_port": _ports(rule, "External"),
+            "internal_port": _ports(rule, "Internal"),
+            "internal_client": rule.get("InternalClient"),
+        }
+        for rule in rules
+        if "Index" in rule
     ]
 
 

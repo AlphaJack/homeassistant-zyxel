@@ -182,3 +182,29 @@ def test_parse_ssids_skips_main_and_internal() -> None:
     assert _parse_ssids(wlans) == [
         {"index": 2, "band": "2.4GHz", "ssid": "Guest", "enabled": True}
     ]
+
+
+def test_parse_port_forwards() -> None:
+    from custom_components.zyxel.api import _parse_port_forwards
+
+    rules = [
+        {
+            "Index": 1,
+            "Enable": True,
+            "Protocol": "TCP",
+            "Description": "Web",
+            "ExternalPortStart": 443,
+            "ExternalPortEnd": 443,
+            "InternalPortStart": 7881,
+            "InternalPortEnd": 7882,
+            "InternalClient": "10.0.0.2",
+        },
+        {"Index": 2, "Enable": False, "Description": ""},
+        {"Description": "no index"},
+    ]
+    parsed = _parse_port_forwards(rules)
+    assert [r["index"] for r in parsed] == [1, 2]
+    assert parsed[0]["external_port"] == "443"
+    assert parsed[0]["internal_port"] == "7881-7882"
+    assert parsed[1]["name"] == "Rule 2"
+    assert parsed[1]["enabled"] is False
