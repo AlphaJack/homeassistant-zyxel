@@ -92,21 +92,28 @@ logged in to the web UI.
 | WAN IP address, connected clients | `sensor` | any |
 | CPU usage, memory used | `sensor` | any |
 | Uptime, firmware version | `sensor` | any |
+| Host name, domain name | `sensor` | any (disabled by default) |
+| WAN bytes sent / received | `sensor` | an active WAN |
 | LAN bytes sent / received | `sensor` | any (disabled by default) |
+| LAN port link (speed, duplex) | `binary_sensor` | each LAN port (disabled by default) |
 | VoIP line registration | `binary_sensor` | each enabled FXS line |
 | Wi-Fi radio on/off | `switch` | each Wi-Fi band |
+| Extra SSID (e.g. guest) on/off | `switch` | each extra SSID and band |
+| Port-forward rule on/off | `switch` | each NAT rule |
+| LEDs on/off | `switch` | firmware with `LEDStatus` |
 | Reboot | `button` | any |
 | WPS pairing | `button` | each Wi-Fi band |
-| Per-client presence | `device_tracker` | opt-in ("Track network devices") |
+| Per-client presence, Wi-Fi signal and rates | `device_tracker` | opt-in ("Track network devices") |
 
 Device tracking is **off by default** — it creates one device per LAN/Wi-Fi client,
 which is only useful for presence automations. Enable it via the "Track network
 devices" option (at setup or later) if you want it.
 
 ### Scope
-The integration covers **monitoring plus the common controls** (Wi-Fi on/off, WPS,
-reboot). It intentionally does **not** manage full device configuration — port
-forwarding, firewall/ACL, QoS, DHCP reservations, DDNS, parental control, VLANs,
+The integration covers **monitoring plus the common controls** (Wi-Fi radios and
+SSIDs, WPS, LEDs, turning existing port-forward rules on or off, reboot). It
+intentionally does **not** manage full device configuration — creating or editing
+port forwards, firewall/ACL, QoS, DHCP reservations, DDNS, parental control, VLANs,
 etc. — which is better handled in the router's web UI. Firmware upgrades are
 ISP/TR-069-driven on carrier units, so there is no update entity.
 
@@ -114,7 +121,9 @@ ISP/TR-069-driven on carrier units, so there is no update entity.
 - Talks to an undocumented, reverse-engineered API; parsing is defensive so entities
   degrade to unavailable rather than crash if a firmware update renames a field.
 - DSL rates come from the currently-synchronised channel, in kbit/s.
-- LAN traffic counters come from the `br0` bridge; WAN-side naming varies by mode.
+- LAN traffic counters come from the `br0` bridge. WAN counters come from the
+  interface that is the default gateway and up (its PPP link for PPPoE). Use a
+  Derivative helper to turn them into throughput.
 
 ## Credits
 - [`nr7101`](https://github.com/pkorpine/nr7101) by pkorpine and
