@@ -333,12 +333,23 @@ class ZyxelDalClient:
                 ssl=self._ssl,
                 timeout=self._timeout,
             ) as resp:
+                if resp.status == 403:
+                    # The router rejects writes carrying a stale key. Drop the
+                    # session so later calls stop using it and re-login once
+                    # the router has expired it.
+                    self.sessionkey = None
+                    raise ZyxelConnectionError(f"Write to {oid} rejected: HTTP 403")
                 resp.raise_for_status()
                 data = await resp.json(content_type=None)
+            if self._encryption:
+                data = self._decrypt(data)
         except aiohttp.ClientError as err:
             raise ZyxelConnectionError(str(err)) from err
-        if self._encryption:
-            data = self._decrypt(data)
+        except (ValueError, KeyError) as err:
+            # The router may have rotated the key without us reading the new
+            # one (e.g. a Wi-Fi reload cut the reply), so the key is unknown.
+            self.sessionkey = None
+            raise ZyxelConnectionError(f"Unreadable reply to write {oid}") from err
         if isinstance(data, dict) and data.get("sessionkey"):
             self.sessionkey = data["sessionkey"]  # consume rotated key
         if data.get("result") != "ZCFG_SUCCESS":
