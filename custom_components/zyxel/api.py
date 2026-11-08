@@ -6,7 +6,7 @@ fetched, a random AES-256 key is generated, credentials are AES-CBC encrypted
 and the AES key is RSA(PKCS1v1.5) encrypted. Every request/response body is the
 envelope ``{"content", "key", "iv"}``.
 
-Firmware quirks handled here (nr7101 gets these wrong on this firmware):
+Firmware quirks handled here:
 * logout is ``POST /cgi-bin/UserLogout`` with a ``CSRFToken`` header,
 * writes carry the session key in the ``CSRFToken`` header,
 * the session key rotates on every write (returned in the response body),
