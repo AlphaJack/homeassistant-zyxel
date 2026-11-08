@@ -11,6 +11,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zyxel.const import CONF_TRACK_DEVICES, DOMAIN
+from custom_components.zyxel.device_tracker import ZyxelDeviceScanner
 
 SNAP: dict[str, Any] = {
     "device": {"SerialNumber": "S1", "ModelName": "DX3301-T0", "UpTime": 1},
@@ -23,7 +24,14 @@ SNAP: dict[str, Any] = {
     "wifi": {},
     "traffic": {},
     "hosts": [
-        {"mac": "AA:BB:CC:00:00:01", "name": "laptop", "active": True},
+        {
+            "mac": "AA:BB:CC:00:00:01",
+            "name": "laptop",
+            "active": True,
+            "connection": "Wi-Fi 5GHz",
+            "rssi": -56,
+            "phy_rate": 845,
+        },
         {"mac": "AA:BB:CC:00:00:02", "name": "phone", "active": False},
     ],
 }
@@ -67,3 +75,15 @@ async def test_tracking_opt_in_creates_trackers(hass: HomeAssistant) -> None:
     """Enabling the option creates one tracker per client."""
     entry = await _setup(hass, {**_BASE, CONF_TRACK_DEVICES: True})
     assert set(_trackers(hass, entry)) == {"AA:BB:CC:00:00:01", "AA:BB:CC:00:00:02"}
+
+
+async def test_tracker_exposes_wifi_stats(hass: HomeAssistant) -> None:
+    """Per-device Wi-Fi stats show up as attributes; missing ones are omitted."""
+    entry = await _setup(hass, {**_BASE, CONF_TRACK_DEVICES: True})
+    scanner = ZyxelDeviceScanner(entry.runtime_data, "AA:BB:CC:00:00:01")
+    attrs = scanner.extra_state_attributes
+    assert attrs["rssi"] == -56
+    assert attrs["phy_rate"] == 845
+    assert attrs["connection"] == "Wi-Fi 5GHz"
+    assert "snr" not in attrs
+    assert "rssi" in ZyxelDeviceScanner._unrecorded_attributes

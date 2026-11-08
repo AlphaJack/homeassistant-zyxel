@@ -49,10 +49,41 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
+_ATTRIBUTES = (
+    "connection",
+    "access_point",
+    "host_type",
+    "interface",
+    "wifi_standard",
+    "rssi",
+    "snr",
+    "signal_strength",
+    "phy_rate",
+    "downlink_rate",
+    "uplink_rate",
+    "bytes_sent",
+    "bytes_received",
+)
+# Change on every poll; keep them out of the recorder database.
+_VOLATILE_ATTRIBUTES = frozenset(
+    {
+        "rssi",
+        "snr",
+        "signal_strength",
+        "phy_rate",
+        "downlink_rate",
+        "uplink_rate",
+        "bytes_sent",
+        "bytes_received",
+    }
+)
+
+
 class ZyxelDeviceScanner(ScannerEntity):
     """Represents a single client tracked by the router."""
 
     _attr_should_poll = False
+    _unrecorded_attributes = _VOLATILE_ATTRIBUTES
 
     def __init__(self, coordinator: ZyxelCoordinator, mac: str) -> None:
         """Initialise the scanner entity."""
@@ -111,9 +142,5 @@ class ZyxelDeviceScanner(ScannerEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional attributes."""
         host = self._host()
-        return {
-            "connection": host.get("connection"),
-            "access_point": host.get("access_point"),
-            "host_type": host.get("host_type"),
-            "interface": host.get("interface"),
-        }
+        attrs = {key: host.get(key) for key in _ATTRIBUTES}
+        return {key: value for key, value in attrs.items() if value is not None}
