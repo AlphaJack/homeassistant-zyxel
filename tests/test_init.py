@@ -95,3 +95,22 @@ async def test_release_session_logs_out_after_each_refresh(hass: HomeAssistant) 
 async def test_session_kept_by_default(hass: HomeAssistant) -> None:
     """By default the session stays open between refreshes."""
     assert await _refresh_logout_count(hass, {}) == 0
+
+
+async def test_failed_first_refresh_logs_out(hass: HomeAssistant) -> None:
+    """A setup that fails after login releases the router session."""
+    entry = MockConfigEntry(domain=DOMAIN, data=DATA)
+    entry.add_to_hass(hass)
+    logout = AsyncMock()
+    with (
+        patch("custom_components.zyxel.api.ZyxelDalClient.login", new=AsyncMock()),
+        patch("custom_components.zyxel.api.ZyxelDalClient.logout", new=logout),
+        patch(
+            "custom_components.zyxel.api.ZyxelDalClient.async_get_status",
+            new=AsyncMock(side_effect=ZyxelConnectionError("timeout")),
+        ),
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    logout.assert_awaited()
