@@ -323,6 +323,7 @@ class ZyxelDalClient:
             "traffic": _parse_traffic(traffic_raw),
             "wan_traffic": _parse_wan_traffic(traffic_raw),
             "hosts": _parse_hosts(lanhosts_raw),
+            "lan_ports": _parse_lan_ports(status.get("LanPortInfo") or []),
         }
 
     # -- writes ---------------------------------------------------------------
@@ -512,6 +513,25 @@ def _parse_wan_traffic(obj: dict[str, Any]) -> dict[str, Any]:
             "BytesSent": st.get("BytesSent"),
         }
     return {}
+
+
+def _parse_lan_ports(ports: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalise LanPortInfo into ``{port, up, speed, duplex}`` per named port."""
+    result: list[dict[str, Any]] = []
+    for port in ports:
+        name = port.get("X_ZYXEL_LanPort")
+        if not name:
+            continue
+        up = port.get("Status") == "Up"
+        result.append(
+            {
+                "port": name,
+                "up": up,
+                "speed": port.get("CurrentBitRate") if up else None,
+                "duplex": port.get("DuplexMode") if up else None,
+            }
+        )
+    return result
 
 
 def _parse_hosts(obj: dict[str, Any]) -> list[dict[str, Any]]:

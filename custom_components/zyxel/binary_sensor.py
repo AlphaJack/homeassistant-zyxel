@@ -11,6 +11,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -70,6 +71,9 @@ async def async_setup_entry(
     for account in coordinator.data.get("sip", []):
         if account.get("enabled") and account.get("line") is not None:
             entities.append(ZyxelSipBinarySensor(coordinator, account["line"]))
+    # One link sensor per physical LAN port.
+    for port in coordinator.data.get("lan_ports", []):
+        entities.append(ZyxelLanPortBinarySensor(coordinator, port["port"]))
     async_add_entities(entities)
 
 
@@ -126,3 +130,41 @@ class ZyxelSipBinarySensor(ZyxelEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the directory number for context."""
         return {"number": self._account().get("number")}
+
+
+class ZyxelLanPortBinarySensor(ZyxelEntity, BinarySensorEntity):
+    """Link state of a single LAN port."""
+
+    _attr_translation_key = "lan_port"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, coordinator: ZyxelCoordinator, port: str) -> None:
+        """Initialise the LAN port sensor."""
+        super().__init__(coordinator)
+        self._port = port
+        self._attr_translation_placeholders = {"port": port}
+        serial = self._data.get("device", {}).get(
+            "SerialNumber", coordinator.config_entry.entry_id
+        )
+        self._attr_unique_id = f"{serial}_lan_port_{port.lower()}"
+
+    def _info(self) -> dict[str, Any]:
+        for port in self.coordinator.data.get("lan_ports", []):
+            if port.get("port") == self._port:
+                return port
+        return {}
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the port has a link."""
+        return bool(self._info().get("up"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose link speed (Mbit/s) and duplex while the link is up."""
+        info = self._info()
+        return {
+            key: info[key] for key in ("speed", "duplex") if info.get(key) is not None
+        }
