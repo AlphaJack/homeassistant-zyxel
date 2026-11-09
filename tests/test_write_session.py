@@ -6,6 +6,7 @@ import asyncio
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
 
 from custom_components.zyxel.api import ZyxelConnectionError, ZyxelDalClient
@@ -96,3 +97,27 @@ async def test_operations_are_serialized() -> None:
     release_poll.set()
     await asyncio.wait_for(asyncio.gather(poll, write), 5)
     assert events == ["poll-start", "poll-end", "write-read"]
+
+
+class _ErrorResponse(_FakeResponse):
+    def raise_for_status(self) -> None:
+        raise aiohttp.ClientResponseError(
+            MagicMock(real_url="http://router.test/cgi-bin/Reboot?sessionkey=old"),
+            (),
+            status=self.status,
+        )
+
+
+async def test_http_error_message_omits_session_key() -> None:
+    session = MagicMock()
+    session.get = MagicMock(return_value=_ErrorResponse(500))
+    session.post = MagicMock(return_value=_ErrorResponse(500))
+    client = ZyxelDalClient(session, "router.test", "user", "pw")
+    client.sessionkey = "old"
+    with pytest.raises(ZyxelConnectionError) as get_err:
+        await client._dal_get("status")
+    with pytest.raises(ZyxelConnectionError) as reboot_err:
+        await client.async_reboot()
+    for err in (get_err.value, reboot_err.value):
+        assert str(err) == "HTTP 500"
+        assert err.__cause__ is None
