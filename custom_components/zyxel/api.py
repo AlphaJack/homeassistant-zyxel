@@ -73,6 +73,8 @@ def _connection_error(err: aiohttp.ClientError) -> ZyxelConnectionError:
     """Wrap an aiohttp error without its URL, which can carry the session key."""
     if isinstance(err, aiohttp.ClientResponseError):
         return ZyxelConnectionError(f"HTTP {err.status}")
+    if isinstance(err, aiohttp.InvalidURL):
+        return ZyxelConnectionError("Invalid URL")
     return ZyxelConnectionError(str(err))
 
 
