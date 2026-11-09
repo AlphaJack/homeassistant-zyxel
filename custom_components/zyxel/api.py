@@ -69,6 +69,15 @@ def _serialized[**P, R](
     return wrapper
 
 
+def _connection_error(err: aiohttp.ClientError) -> ZyxelConnectionError:
+    """Wrap an aiohttp error without its URL, which can carry the session key."""
+    if isinstance(err, aiohttp.ClientResponseError):
+        return ZyxelConnectionError(f"HTTP {err.status}")
+    if isinstance(err, aiohttp.InvalidURL):
+        return ZyxelConnectionError("Invalid URL")
+    return ZyxelConnectionError(str(err))
+
+
 class ZyxelDalClient:
     """Minimal async client for the Zyxel DAL API."""
 
@@ -155,7 +164,7 @@ class ZyxelDalClient:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
         except aiohttp.ClientError as err:
-            raise ZyxelConnectionError(str(err)) from err
+            raise _connection_error(err) from None
 
     # -- login lifecycle ------------------------------------------------------
 
@@ -214,7 +223,7 @@ class ZyxelDalClient:
                     raise ZyxelAuthError(f"Login rejected: {reason}")
                 data = await resp.json(content_type=None)
         except aiohttp.ClientError as err:
-            raise ZyxelConnectionError(str(err)) from err
+            raise _connection_error(err) from None
 
         if self._encryption:
             data = self._decrypt(data)
@@ -381,7 +390,7 @@ class ZyxelDalClient:
             if self._encryption:
                 data = self._decrypt(data)
         except aiohttp.ClientError as err:
-            raise ZyxelConnectionError(str(err)) from err
+            raise _connection_error(err) from None
         except (ValueError, KeyError) as err:
             # The router may have rotated the key without us reading the new
             # one (e.g. a Wi-Fi reload cut the reply), so the key is unknown.
@@ -429,7 +438,7 @@ class ZyxelDalClient:
             ) as resp:
                 resp.raise_for_status()
         except aiohttp.ClientError as err:
-            raise ZyxelConnectionError(str(err)) from err
+            raise _connection_error(err) from None
 
     @_serialized
     async def async_set_wifi_radio(self, band: str, enabled: bool) -> None:

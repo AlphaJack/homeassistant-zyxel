@@ -25,14 +25,26 @@ SNAP: dict[str, Any] = {
     "cellular": {},
     "wan": {"ip": "1.2.3.4"},
     "sip": [{"line": 1, "number": "390000000", "registered": True, "enabled": True}],
-    "wifi": {},
+    "wifi": {"5GHz": {"radio": True, "ssid": "Home-5"}},
+    "ssids": [{"index": 2, "band": "2.4GHz", "ssid": "Guest", "enabled": True}],
+    "port_forwards": [
+        {
+            "index": 1,
+            "name": "NAS",
+            "enabled": True,
+            "protocol": "TCP",
+            "external_port": "443",
+            "internal_port": "443",
+            "internal_client": "192.168.1.10",
+        }
+    ],
     "traffic": {},
     "hosts": [],
 }
 
 
 async def test_diagnostics_redacts_sensitive_data(hass: HomeAssistant) -> None:
-    """Password, serial, IP and phone number are redacted."""
+    """Password, serial, IPs, phone number and Wi-Fi names are redacted."""
     entry = MockConfigEntry(domain=DOMAIN, data=DATA)
     entry.add_to_hass(hass)
     with (
@@ -51,3 +63,6 @@ async def test_diagnostics_redacts_sensitive_data(hass: HomeAssistant) -> None:
     assert diag["data"]["device"]["SerialNumber"] != "S1"
     assert diag["data"]["wan"]["ip"] != "1.2.3.4"
     assert diag["data"]["sip"][0]["number"] != "390000000"
+    assert diag["data"]["wifi"]["5GHz"]["ssid"] != "Home-5"
+    assert diag["data"]["ssids"][0]["ssid"] != "Guest"
+    assert diag["data"]["port_forwards"][0]["internal_client"] != "192.168.1.10"

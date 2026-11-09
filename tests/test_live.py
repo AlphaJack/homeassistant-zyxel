@@ -1,6 +1,7 @@
 """Live end-to-end test against a real Zyxel router.
 
-Skipped unless ZYXEL_HOST / ZYXEL_USER / ZYXEL_PASS are set in the environment.
+Skipped unless ZYXEL_HOST / ZYXEL_USER / ZYXEL_PASS are set in the environment;
+set ZYXEL_HTTPS=1 for routers that only answer over HTTPS.
 It loads the integration exactly as Home Assistant would (config entry ->
 coordinator -> platforms) and asserts that real entities are produced.
 """
@@ -9,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from urllib.parse import urlsplit
 
 import aiohttp
 import pytest
@@ -23,6 +25,7 @@ from custom_components.zyxel.const import CONF_USE_HTTPS, CONF_VERIFY_SSL, DOMAI
 HOST = os.environ.get("ZYXEL_HOST")
 USER = os.environ.get("ZYXEL_USER")
 PASSWORD = os.environ.get("ZYXEL_PASS")
+USE_HTTPS = os.environ.get("ZYXEL_HTTPS") == "1"
 
 pytestmark = pytest.mark.skipif(
     not (HOST and USER and PASSWORD),
@@ -34,7 +37,7 @@ async def _wait_for_free_session(attempts: int = 6, delay: int = 15) -> bool:
     """Return True once a login succeeds (session slot free)."""
     for attempt in range(attempts):
         session = aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True))
-        client = ZyxelDalClient(session, HOST, USER, PASSWORD)
+        client = ZyxelDalClient(session, HOST, USER, PASSWORD, use_https=USE_HTTPS)
         try:
             await client.login()
             await client.logout()
@@ -52,7 +55,11 @@ async def test_live_setup_creates_entities(hass: HomeAssistant) -> None:
     # The HA test harness blocks network access; permit the router for this
     # live test only.
     pytest_socket.enable_socket()
-    pytest_socket.socket_allow_hosts([HOST, "127.0.0.1"], allow_unix_socket=True)
+    # ZYXEL_HOST may carry a port (e.g. an SSH tunnel); the allow list wants
+    # the bare address.
+    pytest_socket.socket_allow_hosts(
+        [urlsplit(f"//{HOST}").hostname, "127.0.0.1"], allow_unix_socket=True
+    )
 
     # The router allows one session per user; a lingering session from a prior
     # run frees within its idle timeout. Wait for a free slot, else skip.
@@ -65,7 +72,7 @@ async def test_live_setup_creates_entities(hass: HomeAssistant) -> None:
             CONF_HOST: HOST,
             CONF_USERNAME: USER,
             CONF_PASSWORD: PASSWORD,
-            CONF_USE_HTTPS: os.environ.get("ZYXEL_HTTPS") == "1",
+            CONF_USE_HTTPS: USE_HTTPS,
             CONF_VERIFY_SSL: False,
         },
     )

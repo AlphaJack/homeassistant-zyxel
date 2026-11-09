@@ -25,6 +25,8 @@ TO_REDACT = {
     "HostName",
     "SsID",
     "SSID",
+    "ssid",
+    "internal_client",
     "X_ZYXEL_Ploam_Password",
 }
 
